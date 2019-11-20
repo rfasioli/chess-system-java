@@ -22,6 +22,7 @@ public class Rook extends ChessPiece {
 		
 		Position p = new Position(0, 0);
 		
+		// TODO - função para reuso
 		//Above
 		p.setValues(position.getRow() - 1, position.getColumn());
 		while(this.getBoard().positionExists(p) && !this.getBoard().thereIsAPiece(p)) {
