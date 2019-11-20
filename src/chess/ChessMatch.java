@@ -33,6 +33,7 @@ public class ChessMatch {
 		Position source = sourcePosition.toPosition();
 		Position target = targetPosition.toPosition();
 		this.validateSourcePosition(source);
+		this.validateTargetPosition(source, target);
 		Piece capturedPiece = this.makeMove(source, target);
 		return (ChessPiece)capturedPiece;
 	}
@@ -50,7 +51,7 @@ public class ChessMatch {
 		this.placeNewPiece('f', 1, new Bishop(this.board, Color.WHITE));
 		this.placeNewPiece('g', 1, new Horse(this.board, Color.WHITE));
 		this.placeNewPiece('h', 1, new Rook(this.board, Color.WHITE));
-		
+
 		this.placeNewPiece('a', 8, new Rook(this.board, Color.BLACK));
 		this.placeNewPiece('b', 8, new Horse(this.board, Color.BLACK));
 		this.placeNewPiece('c', 8, new Bishop(this.board, Color.BLACK));
@@ -72,6 +73,12 @@ public class ChessMatch {
 		}
 		if (!this.board.piece(source).isThereAnyPossibleMove()) {
 			throw new ChessException("Não existe movimentos possíveis para a peça escolhida");			
+		}
+	}
+	
+	private void validateTargetPosition(Position source, Position target) {
+		if (!this.board.piece(source).possibleMove(target)) {
+			throw new ChessException("A peça escolhida não pode ser movida para a posição de destino");
 		}
 	}
 	
