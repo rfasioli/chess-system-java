@@ -9,6 +9,7 @@ import boardgame.Piece;
 import boardgame.Position;
 import chess.pieces.Bishop;
 import chess.pieces.King;
+import chess.pieces.Knight;
 import chess.pieces.Pawn;
 import chess.pieces.Queen;
 import chess.pieces.Rook;
@@ -170,25 +171,25 @@ public class ChessMatch {
 
 	private void initialSetup() {
 		this.placeNewPiece('a', 1, new Rook(this.board, Color.WHITE));
-//		this.placeNewPiece('b', 1, new Horse(this.board, Color.WHITE));
+		this.placeNewPiece('b', 1, new Knight(this.board, Color.WHITE));
 		this.placeNewPiece('c', 1, new Bishop(this.board, Color.WHITE));
 		this.placeNewPiece('d', 1, new Queen(this.board, Color.WHITE));
 		this.placeNewPiece('e', 1, new King(this.board, Color.WHITE));
 		this.placeNewPiece('f', 1, new Bishop(this.board, Color.WHITE));
-//		this.placeNewPiece('g', 1, new Horse(this.board, Color.WHITE));
+		this.placeNewPiece('g', 1, new Knight(this.board, Color.WHITE));
 		this.placeNewPiece('h', 1, new Rook(this.board, Color.WHITE));
 
 		this.placeNewPiece('a', 8, new Rook(this.board, Color.BLACK));
-//		this.placeNewPiece('b', 8, new Horse(this.board, Color.BLACK));
+		this.placeNewPiece('b', 8, new Knight(this.board, Color.BLACK));
 		this.placeNewPiece('c', 8, new Bishop(this.board, Color.BLACK));
 		this.placeNewPiece('d', 8, new Queen(this.board, Color.BLACK));
 		this.placeNewPiece('e', 8, new King(this.board, Color.BLACK));
 		this.placeNewPiece('f', 8, new Bishop(this.board, Color.BLACK));
-//		this.placeNewPiece('g', 8, new Horse(this.board, Color.BLACK));
+		this.placeNewPiece('g', 8, new Knight(this.board, Color.BLACK));
 		this.placeNewPiece('h', 8, new Rook(this.board, Color.BLACK));
 
 		for (int i = 'a'; i <= 'h'; i++) {
-//			this.placeNewPiece((char)i, 2, new Pawn(this.board, Color.WHITE));			
+			this.placeNewPiece((char)i, 2, new Pawn(this.board, Color.WHITE));			
 			this.placeNewPiece((char)i, 7, new Pawn(this.board, Color.BLACK));			
 		}
 	}
