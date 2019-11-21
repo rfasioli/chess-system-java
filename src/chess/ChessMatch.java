@@ -2,6 +2,7 @@ package chess;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import boardgame.Board;
 import boardgame.Piece;
@@ -14,6 +15,8 @@ public class ChessMatch {
 	private int turn;
 	private Color currentPlayer;
 	private Board board;
+	private boolean check;
+
 	private List<ChessPiece> piecesOnTheBoard = new ArrayList<>();
 	private List<ChessPiece> capturedPieces = new ArrayList<>();
 
@@ -32,6 +35,10 @@ public class ChessMatch {
 		return currentPlayer;
 	}
 
+	public boolean isCheck() {
+		return check;
+	}
+	
 	public ChessPiece[][] getPieces() {
 		ChessPiece[][] mat = new ChessPiece[this.board.getRows()][this.board.getColumns()];
 		for (int i = 0; i < this.board.getRows(); i++) {
@@ -54,10 +61,66 @@ public class ChessMatch {
 		this.validateSourcePosition(source);
 		this.validateTargetPosition(source, target);
 		Piece capturedPiece = this.makeMove(source, target);
+		
+		if (this.testCheck(this.currentPlayer)) {
+			this.undoMove(source, target, capturedPiece);
+			throw new ChessException("Você não pode se colocar em check!");
+		}
+		
+		check = this.testCheck(this.opponent(this.currentPlayer));
+		
 		this.nextTurn();
 		return (ChessPiece) capturedPiece;
 	}
 
+	private Piece makeMove(Position source, Position target) {
+		Piece p = this.board.removePiece(source);
+		Piece capturedPiece = this.board.removePiece(target);
+		this.board.placePiece(p, target);
+		if(capturedPiece != null) {
+			this.piecesOnTheBoard.remove(capturedPiece);
+			this.capturedPieces.add((ChessPiece)capturedPiece);
+		}
+		return capturedPiece;
+	}
+	
+	private void undoMove(Position source, Position target, Piece capturedPiece) {
+		Piece p = this.board.removePiece(target);
+		this.board.placePiece(p, source);
+		if (capturedPiece != null) {
+			this.board.placePiece(capturedPiece, target);
+			this.capturedPieces.remove(capturedPiece);
+			this.piecesOnTheBoard.add((ChessPiece)capturedPiece);
+		}
+	}
+	
+	private Color opponent(Color color) {
+		return color == Color.WHITE ? Color.BLACK : Color.WHITE;
+	}
+
+	private ChessPiece king(Color color) {
+		List<ChessPiece> kings = this.piecesOnTheBoard.parallelStream().filter(p -> p.getColor() == color && p instanceof King).collect(Collectors.toList());
+		if (kings.isEmpty()) {
+			throw new IllegalStateException("Não há rei da com " + color + " no tabuleiro.");
+		}
+		if (kings.size() > 1) {
+			throw new IllegalStateException("Há mais de um rei " + color + " no tabuleiro.");
+		}
+		return kings.get(0);
+	}
+	
+	private boolean testCheck(Color color) {
+		Position kingPosition = king(color).getChessPosition().toPosition();
+		List<ChessPiece> opponentPiece = this.piecesOnTheBoard.parallelStream().filter(p -> p.getColor() == this.opponent(color)).collect(Collectors.toList());
+		for (ChessPiece p : opponentPiece) {
+			boolean[][] mat = p.possibleMoves();
+			if (mat[kingPosition.getRow()][kingPosition.getColumn()]) {
+				return true;				
+			}
+		}
+		return false;
+	}
+	
 	private void placeNewPiece(char column, int row, ChessPiece piece) {
 		this.board.placePiece(piece, new ChessPosition(column, row).toPosition());
 		this.piecesOnTheBoard.add(piece);
@@ -109,17 +172,6 @@ public class ChessMatch {
 	private void nextTurn() {
 		this.turn++;
 		this.currentPlayer = this.currentPlayer == Color.WHITE ? Color.BLACK : Color.WHITE;
-	}
-
-	private Piece makeMove(Position source, Position target) {
-		Piece p = this.board.removePiece(source);
-		Piece capturedPiece = this.board.removePiece(target);
-		this.board.placePiece(p, target);
-		if(capturedPiece != null) {
-			this.piecesOnTheBoard.remove(capturedPiece);
-			this.capturedPieces.add((ChessPiece)capturedPiece);
-		}
-		return capturedPiece;
 	}
 
 }
