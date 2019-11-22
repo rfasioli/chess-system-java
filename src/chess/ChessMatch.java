@@ -21,6 +21,9 @@ public class ChessMatch {
 	private Board board;
 	private boolean check;
 	private boolean checkMate;
+	
+	// TODO - enPassantVulnerable deve ser propriedade do peão, passar para classe pawn 
+	private ChessPiece enPassantVulnerable; 
 
 	private List<ChessPiece> piecesOnTheBoard = new ArrayList<>();
 	private List<ChessPiece> capturedPieces = new ArrayList<>();
@@ -48,6 +51,10 @@ public class ChessMatch {
 		return checkMate;
 	}
 
+	public ChessPiece getEnPassantVulnerable() {
+		return enPassantVulnerable;
+	}
+
 	public ChessPiece[][] getPieces() {
 		ChessPiece[][] mat = new ChessPiece[this.board.getRows()][this.board.getColumns()];
 		for (int i = 0; i < this.board.getRows(); i++) {
@@ -64,6 +71,7 @@ public class ChessMatch {
 		return this.board.piece(source).possibleMoves();
 	}
 
+	// TODO - Melhorar lógica
 	public ChessPiece performChessMove(ChessPosition sourcePosition, ChessPosition targetPosition) {
 		Position source = sourcePosition.toPosition();
 		Position target = targetPosition.toPosition();
@@ -76,6 +84,8 @@ public class ChessMatch {
 			throw new ChessException("Você não pode se colocar em check!");
 		}
 
+		ChessPiece movedPiece = (ChessPiece)this.board.piece(target);
+		
 		check = this.testCheck(this.opponent(this.currentPlayer));
 
 		if (this.testCheckMate(this.opponent(this.currentPlayer))) {
@@ -83,6 +93,12 @@ public class ChessMatch {
 		} else {
 			this.nextTurn();
 		}
+		
+		// Special move en passant
+		if (movedPiece instanceof Pawn && (Math.abs(source.getRow() - target.getRow()) == 2)) {
+			this.enPassantVulnerable = movedPiece;
+		}
+		
 		return (ChessPiece) capturedPiece;
 	}
 
@@ -91,26 +107,36 @@ public class ChessMatch {
 		p.increaseMoveCount();
 		Piece capturedPiece = this.board.removePiece(target);
 		this.board.placePiece(p, target);
+		
+		// TODO - melhorar lógica, (movimentos especiais tratar nas peças? ou encapsular em função)
+		if (p instanceof King) {
+			// Special move castling king side rook
+			if (target.getColumn() == source.getColumn() + 2) {
+				Position sourceRook = new Position(source.getRow(), source.getColumn() + 3);
+				Position targetRook = new Position(source.getRow(), source.getColumn() + 1);
+				ChessPiece rook = (ChessPiece)this.board.removePiece(sourceRook);
+				this.board.placePiece(rook, targetRook);
+				rook.increaseMoveCount();
+			}
+			// Special move castling queen side rook
+			else if (target.getColumn() == source.getColumn() - 2) {
+				Position sourceRook = new Position(source.getRow(), source.getColumn() - 4);			
+				Position targetRook = new Position(source.getRow(), source.getColumn() - 1);			
+				ChessPiece rook = (ChessPiece)this.board.removePiece(sourceRook);
+				this.board.placePiece(rook, targetRook);
+				rook.increaseMoveCount();
+			}
+		} else if (p instanceof Pawn) {
+			// Special move en passant
+			if (source.getColumn() != target.getColumn() && capturedPiece == null) {
+				Position pawnPosition = new Position(source.getRow(), target.getColumn());
+				capturedPiece = this.board.removePiece(pawnPosition);				
+			}
+		}
+		
 		if (capturedPiece != null) {
 			this.piecesOnTheBoard.remove(capturedPiece);
 			this.capturedPieces.add((ChessPiece) capturedPiece);
-		}
-		
-		// Special move castling king side rook
-		if (p instanceof King && target.getColumn() == source.getColumn() + 2) {
-			Position sourceRook = new Position(source.getRow(), source.getColumn() + 3);
-			Position targetRook = new Position(source.getRow(), source.getColumn() + 1);
-			ChessPiece rook = (ChessPiece)this.board.removePiece(sourceRook);
-			this.board.placePiece(rook, targetRook);
-			rook.increaseMoveCount();
-		}
-		// Special move castling queen side rook
-		else if (p instanceof King && target.getColumn() == source.getColumn() - 2) {
-			Position sourceRook = new Position(source.getRow(), source.getColumn() - 4);			
-			Position targetRook = new Position(source.getRow(), source.getColumn() - 1);			
-			ChessPiece rook = (ChessPiece)this.board.removePiece(sourceRook);
-			this.board.placePiece(rook, targetRook);
-			rook.increaseMoveCount();
 		}
 		
 		return capturedPiece;
@@ -121,27 +147,37 @@ public class ChessMatch {
 		p.decreaseMoveCount();
 		this.board.placePiece(p, source);
 		if (capturedPiece != null) {
-			this.board.placePiece(capturedPiece, target);
+			if (capturedPiece != this.enPassantVulnerable) {
+				this.board.placePiece(capturedPiece, target);
+			}
 			this.capturedPieces.remove(capturedPiece);
 			this.piecesOnTheBoard.add((ChessPiece) capturedPiece);
 		}
 
-		// Undo Special move castling king side rook
-		if (p instanceof King && target.getColumn() == source.getColumn() + 2) {
-			Position sourceRook = new Position(source.getRow(), source.getColumn() + 3);
-			Position targetRook = new Position(source.getRow(), source.getColumn() + 1);
-			ChessPiece rook = (ChessPiece)this.board.removePiece(targetRook);
-			this.board.placePiece(rook, sourceRook);
-			rook.decreaseMoveCount();
+		if (p instanceof King) {
+			// Undo Special move castling king side rook
+			if (target.getColumn() == source.getColumn() + 2) {
+				Position sourceRook = new Position(source.getRow(), source.getColumn() + 3);
+				Position targetRook = new Position(source.getRow(), source.getColumn() + 1);
+				ChessPiece rook = (ChessPiece)this.board.removePiece(targetRook);
+				this.board.placePiece(rook, sourceRook);
+				rook.decreaseMoveCount();
+			}
+			// Undo Special move castling queen side rook
+			else if (target.getColumn() == source.getColumn() - 2) {
+				Position sourceRook = new Position(source.getRow(), source.getColumn() - 4);			
+				Position targetRook = new Position(source.getRow(), source.getColumn() - 1);			
+				ChessPiece rook = (ChessPiece)this.board.removePiece(targetRook);
+				this.board.placePiece(rook, sourceRook);
+				rook.decreaseMoveCount();
+			}
+		} else if (p instanceof Pawn) {
+			// Special move en passant
+			if (source.getColumn() != target.getColumn() && capturedPiece == this.enPassantVulnerable) {
+				Position pawnPosition = new Position(source.getRow(), target.getColumn());
+				this.board.placePiece(capturedPiece, pawnPosition);				
+			}
 		}
-		// Undo Special move castling queen side rook
-		else if (p instanceof King && target.getColumn() == source.getColumn() - 2) {
-			Position sourceRook = new Position(source.getRow(), source.getColumn() - 4);			
-			Position targetRook = new Position(source.getRow(), source.getColumn() - 1);			
-			ChessPiece rook = (ChessPiece)this.board.removePiece(targetRook);
-			this.board.placePiece(rook, sourceRook);
-			rook.decreaseMoveCount();
-		}		
 	}
 
 	private Color opponent(Color color) {
@@ -215,17 +251,17 @@ public class ChessMatch {
 		this.placeNewPiece('h', 1, new Rook(this.board, Color.WHITE));
 
 		this.placeNewPiece('a', 8, new Rook(this.board, Color.BLACK));
-//		this.placeNewPiece('b', 8, new Knight(this.board, Color.BLACK));
-//		this.placeNewPiece('c', 8, new Bishop(this.board, Color.BLACK));
-//		this.placeNewPiece('d', 8, new Queen(this.board, Color.BLACK));
+		this.placeNewPiece('b', 8, new Knight(this.board, Color.BLACK));
+		this.placeNewPiece('c', 8, new Bishop(this.board, Color.BLACK));
+		this.placeNewPiece('d', 8, new Queen(this.board, Color.BLACK));
 		this.placeNewPiece('e', 8, new King(this.board, Color.BLACK, this));
-//		this.placeNewPiece('f', 8, new Bishop(this.board, Color.BLACK));
-//		this.placeNewPiece('g', 8, new Knight(this.board, Color.BLACK));
+		this.placeNewPiece('f', 8, new Bishop(this.board, Color.BLACK));
+		this.placeNewPiece('g', 8, new Knight(this.board, Color.BLACK));
 		this.placeNewPiece('h', 8, new Rook(this.board, Color.BLACK));
 
 		for (int i = 'a'; i <= 'h'; i++) {
-			this.placeNewPiece((char)i, 2, new Pawn(this.board, Color.WHITE));			
-			this.placeNewPiece((char)i, 7, new Pawn(this.board, Color.BLACK));			
+			this.placeNewPiece((char)i, 2, new Pawn(this.board, Color.WHITE, this));			
+			this.placeNewPiece((char)i, 7, new Pawn(this.board, Color.BLACK, this));			
 		}
 	}
 

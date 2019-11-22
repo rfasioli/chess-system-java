@@ -2,13 +2,17 @@ package chess.pieces;
 
 import boardgame.Board;
 import boardgame.Position;
+import chess.ChessMatch;
 import chess.ChessPiece;
 import chess.Color;
 
 public class Pawn extends ChessPiece {
 
-	public Pawn(Board board, Color color) {
+	private ChessMatch chessMatch;
+
+	public Pawn(Board board, Color color, ChessMatch chessMatch) {
 		super(board, color);
+		this.chessMatch = chessMatch;
 	}
 	
 	public String toString() {
@@ -40,12 +44,25 @@ public class Pawn extends ChessPiece {
 			if (this.getBoard().positionExists(p) && this.isThereOpponentPiece(p)) {
 				mat[p.getRow()][p.getColumn()] = true;
 			}
+			// TODO - melhorar lógica
+			// Special move en passant
+			Position left = new Position(position.getRow(), position.getColumn() - 1);
+			if (this.getBoard().positionExists(left) && this.isThereOpponentPiece(left) && this.getBoard().piece(left) == this.chessMatch.getEnPassantVulnerable()) {
+				mat[p.getRow()][p.getColumn()] = true;
+			}
 
 			// ne
 			p.setValues(position.getRow() - 1, position.getColumn() + 1);
 			if (this.getBoard().positionExists(p) && this.isThereOpponentPiece(p)) {
 				mat[p.getRow()][p.getColumn()] = true;
 			}
+			// TODO - melhorar lógica
+			// Special move en passant
+			Position right = new Position(position.getRow(), position.getColumn() + 1);
+			if (this.getBoard().positionExists(right) && this.isThereOpponentPiece(right) && this.getBoard().piece(right) == this.chessMatch.getEnPassantVulnerable()) {
+				mat[p.getRow()][p.getColumn()] = true;
+			}
+			
 			
 		} else {
 			// below
@@ -66,10 +83,22 @@ public class Pawn extends ChessPiece {
 			if (this.getBoard().positionExists(p) && this.isThereOpponentPiece(p)) {
 				mat[p.getRow()][p.getColumn()] = true;
 			}
+			// TODO - melhorar lógica
+			// Special move en passant
+			Position left = new Position(position.getRow(), position.getColumn() - 1);
+			if (this.getBoard().positionExists(left) && this.isThereOpponentPiece(left) && this.getBoard().piece(left) == this.chessMatch.getEnPassantVulnerable()) {
+				mat[p.getRow()][p.getColumn()] = true;
+			}
 
 			// se
 			p.setValues(position.getRow() + 1, position.getColumn() + 1);
 			if (this.getBoard().positionExists(p) && this.isThereOpponentPiece(p)) {
+				mat[p.getRow()][p.getColumn()] = true;
+			}
+			// TODO - melhorar lógica
+			// Special move en passant
+			Position right = new Position(position.getRow(), position.getColumn() + 1);
+			if (this.getBoard().positionExists(right) && this.isThereOpponentPiece(right) && this.getBoard().piece(right) == this.chessMatch.getEnPassantVulnerable()) {
 				mat[p.getRow()][p.getColumn()] = true;
 			}
 			
