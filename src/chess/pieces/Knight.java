@@ -15,6 +15,10 @@ public class Knight extends ChessPiece {
 		return "N";
 	}
 
+	private boolean canMove(Position p) {
+		return !this.getBoard().thereIsAPiece(p) || this.isThereOpponentPiece(p);
+	}
+
 	@Override
 	public boolean[][] possibleMoves() {
 		boolean[][] mat = new boolean[this.getBoard().getRows()][this.getBoard().getColumns()];
@@ -72,9 +76,4 @@ public class Knight extends ChessPiece {
 		return mat;
 	}
 	
-
-	private boolean canMove(Position p) {
-		return !this.getBoard().thereIsAPiece(p) || this.isThereOpponentPiece(p);
-	}
-
 }

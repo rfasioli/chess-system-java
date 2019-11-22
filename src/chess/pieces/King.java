@@ -2,19 +2,33 @@ package chess.pieces;
 
 import boardgame.Board;
 import boardgame.Position;
+import chess.ChessMatch;
 import chess.ChessPiece;
 import chess.Color;
 
 public class King extends ChessPiece {
 
-	public King(Board board, Color color) {
+	private ChessMatch chessMatch;
+	
+	public King(Board board, Color color, ChessMatch chessMatch) {
 		super(board, color);
+		this.chessMatch = chessMatch;
 	}
 	
 	public String toString() {
 		return "K";
 	}
 
+	private boolean canMove(Position position) {
+		ChessPiece p = (ChessPiece)this.getBoard().piece(position);
+		return p == null || p.getColor() != this.getColor();
+	}
+
+	private boolean testRookCastling(Position position) {
+		ChessPiece p = (ChessPiece)this.getBoard().piece(position);
+		return p != null && p instanceof Rook && p.getColor() == this.getColor() && p.getMoveCount() == 0;
+	}
+	
 	@Override
 	public boolean[][] possibleMoves() {
 		boolean[][] mat = new boolean[this.getBoard().getRows()][this.getBoard().getColumns()];
@@ -68,6 +82,35 @@ public class King extends ChessPiece {
 		if (getBoard().positionExists(p) && canMove(p)) {
 			mat[p.getRow()][p.getColumn()] = true;
 		}
+
+		// TODO - melhorar, encapsular função para reuso
+		// castling
+		if (this.getMoveCount() == 0 && !this.chessMatch.isCheck()) {
+			// castling king side
+			p.setValues(position.getRow(), 7);
+			if (this.testRookCastling(p)) {
+				// TODO - melhorar logica recursivo
+				Position p1 = new Position(position.getRow(), position.getColumn() + 1);
+				Position p2 = new Position(position.getRow(), position.getColumn() + 2);
+				if (!this.getBoard().thereIsAPiece(p1) && !this.getBoard().thereIsAPiece(p2)) {
+					mat[p2.getRow()][p2.getColumn()] = true;
+				}
+			}
+			
+			// castling queen side
+			p.setValues(position.getRow(), 0);
+			this.testRookCastling(p);
+			if (this.testRookCastling(p)) {
+				// TODO - melhorar logica recursivo
+				Position p1 = new Position(position.getRow(), position.getColumn() - 1);
+				Position p2 = new Position(position.getRow(), position.getColumn() - 2);
+				Position p3 = new Position(position.getRow(), position.getColumn() - 3);
+				if (!this.getBoard().thereIsAPiece(p1) && !this.getBoard().thereIsAPiece(p2) && !this.getBoard().thereIsAPiece(p3)) {
+					mat[p2.getRow()][p2.getColumn()] = true;
+				}
+			}
+			
+		}
 		
 		return mat;
 	}
@@ -77,8 +120,4 @@ public class King extends ChessPiece {
 		return false;
 	}
 
-	private boolean canMove(Position position) {
-		ChessPiece p = (ChessPiece)this.getBoard().piece(position);
-		return p == null || p.getColor() != this.getColor();
-	}
 }
